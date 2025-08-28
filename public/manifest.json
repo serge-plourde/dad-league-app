@@ -1,11 +1,4 @@
-{
-  "name": "The DAD League",
-  "short_name": "DAD League",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#FAFAFA",
-  "theme_color": "#FAFAFA",
-  "icons": [
+"icons": [
   {
     "src": "/icon-192.png",
     "sizes": "192x192",
