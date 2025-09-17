@@ -1,7 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
+
 export default function UploadPage() {
+useEffect(() => {
+  console.log("✅ Upload page loaded");
+}, []);
+
+
   const [image, setImage] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -52,7 +58,8 @@ export default function UploadPage() {
     setImage(null);
   };
 
-  return (
+
+  return (<h2>Upload Page is Working ✅</h2>
     <div style={{ padding: '2rem' }}>
       <h1>Upload Workbook Page</h1>
       <form onSubmit={handleSubmit}>
