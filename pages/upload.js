@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../supabaseClient';
 
 export default function UploadPage() {
   const [image, setImage] = useState(null);
@@ -17,48 +18,48 @@ export default function UploadPage() {
     }
 
     // Step 1: Upload image to Supabase storage
-    const formData = new FormData();
-    formData.append('file', image);
+    const fileName = `${Date.now()}-${image.name}`;
+    const { data, error } = await supabase.storage
+      .from('uploads')
+      .upload(fileName, image);
 
-    const { data: storageData, error: storageError } = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    }).then(res => res.json());
-
-    if (storageError) {
-      setMessage('Upload failed: ' + storageError.message);
+    if (error) {
+      setMessage(`Upload failed: ${error.message}`);
       return;
     }
 
-    // Step 2: Save submission record to Supabase via our API
-    const res = await fetch('/api/submissions', {
+    // Step 2: Get a public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(fileName);
+
+    const imageUrl = publicUrlData.publicUrl;
+
+    // Step 3: Save submission in database
+    const { error: dbError } = await fetch('/api/submissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: 'demo-user',  // replace later with real user auth
-        image_url: storageData.publicUrl,
+        user_id: 'test-user', // later this will come from auth
+        image_url: imageUrl,
       }),
     });
 
-    if (res.ok) {
-      setMessage('Submission saved successfully!');
-    } else {
-      setMessage('Error saving submission.');
+    if (dbError) {
+      setMessage(`Database save failed: ${dbError.message}`);
+      return;
     }
+
+    setMessage('Upload successful! ✅');
+    setImage(null);
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Upload Your Daily Actions</h1>
+    <div style={{ padding: '20px' }}>
+      <h2>Upload your daily page</h2>
       <form onSubmit={handleSubmit}>
-        <input 
-  type="file" 
-  accept="image/*" 
-  capture="environment" 
-  onChange={handleFileChange} 
-/>
-
-        <button type="submit">Submit</button>
+        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <button type="submit">Upload</button>
       </form>
       <p>{message}</p>
     </div>
