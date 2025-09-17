@@ -13,55 +13,53 @@ export default function UploadPage() {
     e.preventDefault();
 
     if (!image) {
-      setMessage('Please select an image first.');
+      setMessage('⚠️ Please select an image first.');
       return;
     }
 
-    // Step 1: Upload image to Supabase storage
+    // Step 1: Upload to Supabase Storage (bucket "uploads")
     const fileName = `${Date.now()}-${image.name}`;
-    const { data, error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('uploads')
       .upload(fileName, image);
 
-    if (error) {
-      setMessage(`Upload failed: ${error.message}`);
+    if (uploadError) {
+      setMessage('❌ Upload failed: ' + uploadError.message);
       return;
     }
 
-    // Step 2: Get a public URL
-    const { data: publicUrlData } = supabase.storage
+    // Step 2: Get public URL
+    const { data: publicData } = supabase.storage
       .from('uploads')
       .getPublicUrl(fileName);
 
-    const imageUrl = publicUrlData.publicUrl;
+    const imageUrl = publicData.publicUrl;
 
-    // Step 3: Save submission in database
-    const { error: dbError } = await fetch('/api/submissions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: 'test-user', // later this will come from auth
+    // Step 3: Save record in submissions table
+    const { error: dbError } = await supabase.from('submissions').insert([
+      {
+        user_id: 'test-user', // Replace later with real user auth
         image_url: imageUrl,
-      }),
-    });
+      },
+    ]);
 
     if (dbError) {
-      setMessage(`Database save failed: ${dbError.message}`);
+      setMessage('❌ Failed to save submission: ' + dbError.message);
       return;
     }
 
-    setMessage('Upload successful! ✅');
+    setMessage('✅ Image uploaded and submission saved!');
     setImage(null);
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Upload your daily page</h2>
+    <div style={{ padding: '2rem' }}>
+      <h1>Upload Workbook Page</h1>
       <form onSubmit={handleSubmit}>
         <input type="file" accept="image/*" onChange={handleFileChange} />
         <button type="submit">Upload</button>
       </form>
-      <p>{message}</p>
+      {message && <p>{message}</p>}
     </div>
   );
 }
